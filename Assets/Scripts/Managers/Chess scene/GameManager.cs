@@ -1,18 +1,35 @@
 using System;
+using System.Collections.Generic;
+
 using UnityEngine;
+using UnityEngine.UI;
+using static GameState;
+
 
 public class GameManager : MonoBehaviour
 {
     #region params
+
+    [Header("Win Scene")] 
+    [SerializeField] private GameObject blackWinScene;
+    [SerializeField] private GameObject whiteWinScene;
+
+    [SerializeField] private GameObject optionBtn;
+    [SerializeField] private GameObject backToMenuBtn;
+    
+    [SerializeField] private GameObject mvpHolder;
+    [SerializeField] private Image mvp;
     
     public static GameManager Instance;
     
-    public GameState State;
+    public static GameState State;
     
-    private int _round = 0;
-
+    private List<Piece> _blackPieces, _whitePieces;
+    private bool _isEnd;
+    
     #endregion
 
+    
     private void Awake()
     {
         Instance = this;
@@ -20,68 +37,73 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     { 
-        UpdateGameState(GameState.StartGame);
+        UpdateGameState(StartGame);
     }
 
-    public void UpdateGameState(GameState newState)
+  
+    /// <summary>
+    /// > This function updates the game state and calls the appropriate functions to generate the board
+    /// and spawn the pieces
+    /// </summary>
+    /// <param name="newState">The new state to be updated to.</param>
+    /// <returns>
+    /// The return type is void.
+    /// </returns>
+    public static void UpdateGameState(GameState newState)
     {
         State = newState;
-
-        if (_round > 5) return;
-
-        switch (State)
-        {
-            case GameState.StartGame:
-                TileManager.Instance.GenerateTile();
-                PieceManager.Instance.SpawnWhitePieces();
-                PieceManager.Instance.SpawnBlackPieces();
-                break;
-            
-            case GameState.BlackTurn:
-                HandleBackTurn();
-                break;
-                
-            case GameState.WhiteTurn:
-                HandleWhiteTurn();
-                break;
-                
-            case GameState.Win:
-            case GameState.Lose:
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
         
+        //Game state handler
+        if (State is not StartGame) return;
 
+        Action generateTile = TileManager.Instance.GenerateTile;
+        var pieceManager = PieceManager.Instance;
+
+        generateTile();
+        pieceManager.SpawnWhitePieces();
+        pieceManager.SpawnBlackPieces();
     }
 
-    private void HandleCalculatePieces()
+    /// <summary>
+    /// If the current state is BlackTurn, then change the state to WhiteTurn, otherwise change the
+    /// state to BlackTurn
+    /// </summary>
+    public static void ChangeTurn()
     {
-        if (_round <= 5) return;
-        UpdateGameState(GameState.Win);
-        Debug.Log("There is no pieces left");
-    }
-
-    private void HandleBackTurn()
-    {
-        Debug.Log("<color=black>BLACK</color> Player turn!");
-        _round++;
-    }
-
-    private void HandleWhiteTurn()
-    {
-        Debug.Log("<color=white>WHITE</color> Player turn!");
-        _round++;
-
-    }
-
-    public void ChangeTurn()
-    {
-        State = (State == GameState.BlackTurn) 
-            ? GameState.WhiteTurn 
-            : GameState.BlackTurn;
+        State = (State is BlackTurn)
+            ? WhiteTurn 
+            : BlackTurn;
         
-        UpdateGameState(State);
     }
 
+    public void BlackWin()
+    {
+        if (!blackWinScene) return;
+        
+        blackWinScene?.SetActive(true);
+        Piece attacker = TileManager.Instance?.GetTile(WhiteTeam.KingPos).occupiedPiece;
 
+        ShowMvp(attacker);
+    }
+
+    public void WhiteWin()
+    {
+        if (!whiteWinScene) return;
+        
+        whiteWinScene?.SetActive(true);
+        Piece attacker = TileManager.Instance?.GetTile(BlackTeam.KingPos).occupiedPiece;
+     
+        ShowMvp(attacker);
+
+    }
+
+    private void ShowMvp(Component attacker)
+    {
+        mvpHolder.SetActive(true);
+        
+        optionBtn.SetActive(false);
+        backToMenuBtn.SetActive(true);
+        
+        mvp.GetComponent<Image>().sprite = attacker?.GetComponent<SpriteRenderer>().sprite;
+    }
 }

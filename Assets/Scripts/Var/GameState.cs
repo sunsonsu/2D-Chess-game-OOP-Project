@@ -6,6 +6,11 @@ public enum GameState
     BlackTurn = 1,
     WhiteTurn = 2,
     
-    Win = 3,
-    Lose = 4 
+    Promotion,
+    Setting,
+    
+    CheckBlack,
+    CheckWhite,
+    
+    End
 }

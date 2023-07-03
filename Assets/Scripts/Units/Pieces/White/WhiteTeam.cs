@@ -1,6 +1,0 @@
-
-public class WhiteTeam : WhitePieces
-{
-  
-}
-

@@ -1,18 +1,21 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+using static System.Math;
 
 public class BlackPieces : Piece
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    #region Promotion
 
-    // Update is called once per frame
-    void Update()
+    //Bottom last row on board
+    private const float PromotionYPos = 0.0f;
+    
+    /// <inheritdoc />
+    public override bool CheckPawnPromotion()
     {
+        if (roll is not Roll.Pawn) return false;
+        if (!(Abs(pos.y - PromotionYPos) < 0.01f)) return false;
         
+        BlackPawnPromotionManager.Instance.TimeToPromotion(this);
+        return true;
     }
+    
+    #endregion
 }

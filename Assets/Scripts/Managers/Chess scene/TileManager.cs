@@ -1,10 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using JetBrains.Annotations;
+using Unity.Mathematics;
 using UnityEngine;
-
-using static Unity.Mathematics.quaternion;
-using Random = UnityEngine.Random;
 
 public class TileManager : MonoBehaviour
 {
@@ -12,20 +9,21 @@ public class TileManager : MonoBehaviour
     #region params
 
     [Header("Initial game setting")] 
-    [SerializeField] private int width;
-    [SerializeField] private int hight;
     [SerializeField] private new Transform camera;
     
     [Space(3)]
     [Header("Game object parents")]
     [SerializeField] private GameObject parentTiles;
-
+    
     [Space(3)]
-    [SerializeField] private Tile Tile;
+    [SerializeField] private Tile tile;
 
-    [CanBeNull] private readonly Dictionary<Vector2, Tile> _tiles = new();
-
+    [CanBeNull] 
+    public readonly Dictionary<Vector2, Tile> DictTiles = new();
     public static TileManager Instance;
+    
+    private const int Width = 8;
+    private const int Height = 8;
     
     #endregion
 
@@ -35,62 +33,60 @@ public class TileManager : MonoBehaviour
     }
     
 
+    
+    /// <summary>
+    /// > This function generates a grid of tiles, and sets the camera position to the center of the
+    /// board
+    /// </summary>
     public void GenerateTile()
     {
-
-        for (var column = 0; column < width; column++)
+        
+        /* Creating a grid of tiles. */
+        for (var column = 0; column < Width; column++)
         {
-            for (var row = 0; row < hight; row++)
+            for (var row = 0; row < Height; row++)
             {
-                var tile = Instantiate(Tile, new Vector3(column, row), identity);
+                var instantiateTile = Instantiate(tile, new Vector3(column, row), quaternion.identity);
                 var isOffset = (column % 2 == 0 && row % 2 != 0 ) || (column % 2 != 0 && row % 2 == 0);
                 Vector2 pos = new Vector2(column, row);
 
                 
                 //set parent of tile
-                tile.transform.parent = parentTiles.transform;
-                tile.name = $"Tile at ({column}, {row})";
+                instantiateTile.transform.parent = parentTiles.transform;
+                instantiateTile.name = $"Tile at ({column}, {row})";
 
-                tile.Init(isOffset, pos);
+                instantiateTile.Init(isOffset, pos);
 
-                _tiles![pos] = tile;
+                DictTiles![pos] = instantiateTile;
             }
         }
-
-        camera.transform.position = new Vector3((float)width / 2 - 0.5f,(float)hight/2 - 0.5f, -10 );
+        
+        /* Setting the camera position to the center of the board. */
+        camera.transform.position = new Vector3((float)Width / 2 - 0.5f,(float)Height/2 - 0.5f, -10 );
         
     }
-
-    #region Get spawn tile position
-
-    public Tile GetWhiteTeamSpawnTile() 
-    {
-        return _tiles!.Where(t 
-            => t.Key.x < (float) width / 2
-               && t.Value.Walkable
-        ).OrderBy(t
-            => Random.value
-        ).First().Value;
-    }
     
-    public Tile GetBlackTeamSpawnTile() 
-    {
-        return _tiles!.Where(t 
-            => t.Key.x > (float) width / 2
-               && t.Value.Walkable
-        ).OrderBy(t
-            => Random.value
-        ).First().Value;
-    }
-
-    #endregion
-
-   
     
+    
+    /// <summary>
+    /// If the dictionary has a key of the position, then return the value of the key. 
+    /// 
+    /// If the dictionary does not have a key of the position, then return null. 
+    /// 
+    /// The above function is used in the following function:
+    /// </summary>
+    /// <param name="pos">The position of the tile.</param>
+    /// <returns>
+    /// The tile at the position.
+    /// </returns>
     public Tile GetTile(Vector2 pos)
     {
-        return _tiles!.TryGetValue(pos, out var tile) ? tile : null;
+        return DictTiles!.TryGetValue(pos, value: out Tile getTile) ? getTile : null;
     }
 
-
+    
+    /// <summary>
+    /// > This function returns a dictionary of all the tiles in the game
+    /// </summary>
+    internal Dictionary<Vector2, Tile> Tiles() => DictTiles;
 }
